@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Motorcycle Comparison</title>
+  <style>
+    table, th, tr, td {
+      border: 2px solid black;
+      border-collapse: collapse;
+      padding: 4px;
+    }
+  </style>
+</head>
+<body class="container py-5">
+  <h1 class="mb-4">Compare Motorcycles by Make</h1>
+  <div class="mb-3">
+    <input
+      type="text"
+      id="makeInput"
+      class="form-control"
+      placeholder="Enter manufacturer (e.g., Honda)"
+    />
+  </div>
+  <button id="getMoto" class="btn btn-primary mb-4">Get Motorcycles</button>
+
+  <table class="w-100">
+    <thead>
+      <tr>
+        <td>#</td>
+        <td>Name</td>
+        <td>Type</td>
+        <td>Power (hp)</td>
+        <td>Weight (kg)</td>
+      </tr>
+    </thead>
+    <tbody id="myTableBody"></tbody>
+  </table>
+
+  <script>
+    const btn       = document.getElementById('getMoto');
+    const input     = document.getElementById('makeInput');
+    const tableBody = document.getElementById('myTableBody');
+
+    btn.addEventListener('click', () => {
+      const make = input.value.trim();
+      if (!make) {
+        alert('Please enter a motorcycle make.');
+        return;
+      }
+
+      fetch(`/api/compare?make=${encodeURIComponent(make)}`)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          tableBody.innerHTML = '';
+          if (!data.length) {
+            tableBody.innerHTML = '<tr><td colspan="5">No results.</td></tr>';
+            return;
+          }
+          data.forEach((bike, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${i+1}</td>
+              <td>${bike.name || 'N/A'}</td>
+              <td>${bike.type || 'N/A'}</td>
+              <td>${bike.power ?? 'N/A'}</td>
+              <td>${bike.weight ?? 'N/A'}</td>
+            `;
+            tableBody.appendChild(tr);
+          });
+        })
+        .catch(err => {
+          console.error('Fetch error:', err);
+          alert('Failed to fetch motorcycles.');
+        });
+    });
+  </script>
+</body>
+</html>

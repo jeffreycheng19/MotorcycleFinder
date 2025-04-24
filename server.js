@@ -1,35 +1,72 @@
-require('dotenv').config();
-const express = require('express');
-const axios = require('axios');
-const path = require('path');
+"use strict";
+
+const express = require("express");
+const multer = require("multer");
+const axios = require("axios");
+const path = require("path");
+require("dotenv").config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(multer().none());
 
-app.post('/recommend-bike', async (req, res) => {
-    console.log('🔔 POST /recommend-bike body:', req.body);
-  
-    try {
-      const response = await axios.get('https://api.api-ninjas.com/v1/motorcycles', {
-        headers: { 'X-Api-Key': process.env.API_KEY },
-        params: { make: req.body.make, model: req.body.model, year: req.body.year }
-      });
-      res.json(response.data);
-    } catch (error) {
-      if (error.response) {
-        console.error('💥 API error status:', error.response.status);
-        console.error('💥 API error data:', error.response.data);
-        return res.status(error.response.status).json({ error: error.response.data });
+app.use(express.static(path.join(__dirname, "public")));
+
+app.post("/recommend-bike", async (req, res) => {
+  const { experience, type, min_power, max_weight, make } = req.body;
+
+  if (!experience) return res.status(400).json({ error: "Experience level is required" });
+  if (!type)       return res.status(400).json({ error: "Bike type is required" });
+
+  const params = { type };
+  if (min_power)  params.min_power  = min_power;
+  if (max_weight) params.max_weight = max_weight;
+  if (make)       params.make       = make;
+
+  try {
+    const apiRes = await axios.get(
+      "https://api.api-ninjas.com/v1/motorcycles",
+      {
+        headers: { "X-Api-Key": process.env.API_KEY },
+        params
       }
-      console.error('❌ Network or code error:', error.message);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-  
+    );
+    res.json(apiRes.data);
+  } catch (err) {
+    console.error("API error:", err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ error: err.response?.data || 'Failed to fetch motorcycles' });
+  }
+});
+
+app.get("/api/compare", async (req, res) => {
+  const { make } = req.query;
+  if (!make) return res.status(400).json({ error: "Make query parameter is required" });
+  try {
+    const apiRes = await axios.get(
+      "7847|sawfOf3RvdyHmP8MmmkBoazbbpQKLcWioeCmUebj",
+      {
+        headers: { "X-Api-Key": process.env.API_KEY },
+        params: { make }
+      }
+    );
+    res.json(apiRes.data);
+  } catch (err) {
+    console.error("API error:", err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ error: err.response?.data || 'Failed to fetch motorcycles' });
+  }
+});
+
+app.get("/compare", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "comparison.html"));
+});
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}/`);
 });
