@@ -21,6 +21,15 @@
       placeholder="Enter manufacturer (e.g., Honda)"
     />
   </div>
+
+  <div class="mb-3">
+    <input
+      type="text"
+      id="modelInput"
+      class="form-control"
+      placeholder="Enter Model (e.g., CBR 250)"
+    />
+  </div>
   <button id="getMoto" class="btn btn-primary mb-4">Get Motorcycles</button>
 
   <table class="w-100">
@@ -37,45 +46,121 @@
   </table>
 
   <script>
-    const btn       = document.getElementById('getMoto');
-    const input     = document.getElementById('makeInput');
+    const btn = document.getElementById('getMoto');
+    const input = document.getElementById('makeInput');
     const tableBody = document.getElementById('myTableBody');
 
-    btn.addEventListener('click', () => {
-      const make = input.value.trim();
-      if (!make) {
-        alert('Please enter a motorcycle make.');
-        return;
-      }
+    let bikeData = {}; // Object to store finance data
+    bikeData = fetchFinanceData();
 
-      fetch(`/api/compare?make=${encodeURIComponent(make)}`)
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json();
-        })
-        .then(data => {
-          tableBody.innerHTML = '';
-          if (!data.length) {
-            tableBody.innerHTML = '<tr><td colspan="5">No results.</td></tr>';
-            return;
-          }
-          data.forEach((bike, i) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${i+1}</td>
-              <td>${bike.name || 'N/A'}</td>
-              <td>${bike.type || 'N/A'}</td>
-              <td>${bike.power ?? 'N/A'}</td>
-              <td>${bike.weight ?? 'N/A'}</td>
-            `;
-            tableBody.appendChild(tr);
-          });
-        })
-        .catch(err => {
-          console.error('Fetch error:', err);
-          alert('Failed to fetch motorcycles.');
-        });
-    });
+    function fetchFinanceData() {
+            fetch(`http://127.0.0.1:3000/api/finances`)
+                .then(statusCheck)
+                .then((response) => response.json())
+                .then(processReq)
+                .catch(handleError);
+        }
+
+        function processReq(data){
+            displayFinanceData(data);
+            console.log(data);
+        }
+        
+        async function statusCheck(res) {
+            if (!res.ok) {
+                throw new Error(await res.text());
+            }
+            return res;
+        }
+
+        function displayFinanceData(data) {
+
+            if (!data?.transactions) {
+                console.warn(
+                    "are you sure you are calling it after fetchFinanceData is finsihed ?"
+                );
+                throw new Error("data is not valid");
+            }
+
+            const financeDataElement = document.getElementById("financeData");
+
+            data.transactions.forEach((item) => {
+                const tableRow = document.createElement("tr");
+                const finTitle = document.createElement("td");
+                const finCategory = document.createElement("td");
+                const finAmount = document.createElement("td");
+                const finType = document.createElement("td");
+                const finDate = document.createElement("td");
+
+                finTitle.textContent = item.title + " ";
+                finCategory.textContent = item.category + " ";
+                finAmount.textContent = item.amount + " ";
+                finType.textContent = item.type + " ";
+                finDate.textContent = item.date + " ";
+
+                tableRow.append(finTitle);
+                tableRow.append(finCategory);
+                tableRow.append(finAmount);
+                tableRow.append(finType);
+                tableRow.append(finDate);
+
+                financeDataElement.append(tableRow);
+                console.log(item);
+                // Your code goes here!
+
+            });
+        }
+
+        function updateLastUpdatedTime() {
+            // Just updates the time on webpage.
+            const now = new Date();
+            const currentTime =
+                now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+
+            document.getElementById("updateTime").innerText =
+                "Last Updated: " + currentTime;
+        }
+
+
+        fetchFinanceData(); // Populate the financeData array
+        displayFinanceData(); // Display the data in the table
+        updateLastUpdatedTime(); // Update the last updated time
+
+    // btn.addEventListener('click', () => {
+    //   const make = input.value.trim();
+    //   if (!make) {
+    //     alert('Please enter a motorcycle make.');
+    //     return;
+    //   }
+
+    //   fetch(`/api/compare?make=${encodeURIComponent(make)}`)
+    //     .then(res => {
+    //       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    //       return res.json();
+    //     })
+    //     .then(data => {
+    //       tableBody.innerHTML = '';
+    //       if (!data.length) {
+    //         tableBody.innerHTML = '<tr><td colspan="5">No results.</td></tr>';
+    //         return;
+    //       }
+    //       data.forEach((bike, i) => {
+    //         const tr = document.createElement('tr');
+    //         tr.innerHTML = `
+    //           <td>${i+1}</td>
+    //           <td>${bike.name || 'N/A'}</td>
+    //           <td>${bike.type || 'N/A'}</td>
+    //           <td>${bike.power ?? 'N/A'}</td>
+    //           <td>${bike.weight ?? 'N/A'}</td>
+    //         `;
+    //         tableBody.appendChild(tr);
+    //       });
+    //     })
+    //     .catch(err => {
+    //       console.error('Fetch error:', err);
+    //       alert('Failed to fetch motorcycles.');
+    //     });
+    // });
   </script>
 </body>
 </html>
